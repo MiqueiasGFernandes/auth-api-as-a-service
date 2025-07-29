@@ -21,6 +21,10 @@ describe("/signup", () => {
 		test("WHEN username has an invalid pattern by field type USERNAME allowed params. SHOULD returns error code 419 ", () => { });
 		test("WHEN user is creating without username. SHOULD returns error code 419", () => { });
 		test("WHEN user is creating without password. SHOULD returns error code 419", () => { });
+		test("WHEN user with matching PHONE NUMBER already exists. SHOULD returns error code 409", () => { });
+		test("WHEN user with matching USERNAME already exists. SHOULD returns error code 409", () => { });
+		test("WHEN user with matching EMAIL already exists. SHOULD returns error code 409", () => { });
+		test("WHEN user two users are created simulteanely. SHOULD be idempotent", () => { });
 		test("WHEN user is successfully created. SHOULD exists in database", () => { });
 	});
 });

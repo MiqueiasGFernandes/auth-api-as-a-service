@@ -29,6 +29,9 @@
       ],
       "@presentation/*": [
         "./src/presentation/*"
+      ],
+      "@config/*": [
+        "./src/config/*"
       ]
     }
   }

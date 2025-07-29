@@ -1,0 +1,1 @@
+export { ISettingsFetcherGateway, SETTINGS_FETCH_GATEWAY } from './settings.fetcher.gateway'

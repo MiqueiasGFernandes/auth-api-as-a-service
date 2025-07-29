@@ -1,0 +1,1 @@
+export { LocalSettingsFetcherGateway } from './local-settings-fetcher-gateway'

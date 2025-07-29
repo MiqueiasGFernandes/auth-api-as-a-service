@@ -1,0 +1,1 @@
+export { TypeOrmUserModel } from './typeorm-user.model'
