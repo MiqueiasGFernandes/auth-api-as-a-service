@@ -1,15 +1,21 @@
 import type { Result, UserInputDto, UserOutputDto } from "@application/dto";
-import type { ISettingsFetcherGateway } from "@application/gateways/settings.fetcher.gateway";
+import {
+    type ISettingsFetcherGateway,
+    SETTINGS_FETCH_GATEWAY,
+} from "@application/gateways";
 import { UserMapper } from "@application/mappers";
 import type { IUserRepository } from "@application/repositories";
+import { USER_REPOSITORY } from "@application/repositories/user.repository";
 import type { FieldType } from "@domain/entities";
 import type { IAddUserUseCase } from "@domain/use-cases";
-import { HttpStatus, Injectable } from "@nestjs/common";
+import { HttpStatus, Inject, Injectable } from "@nestjs/common";
 
 @Injectable()
 export class RemoteAddUserUseCase implements IAddUserUseCase {
     constructor(
+        @Inject(SETTINGS_FETCH_GATEWAY)
         private readonly settingsFetcherGateway: ISettingsFetcherGateway,
+        @Inject(USER_REPOSITORY)
         private readonly userRepository: IUserRepository,
     ) { }
     async execute(input: UserInputDto): Promise<Result<UserOutputDto>> {
@@ -17,9 +23,10 @@ export class RemoteAddUserUseCase implements IAddUserUseCase {
             "AUTHENTICATION.USERNAME_FIELD_TYPE",
         );
 
-        const isDuplicatedUser = await this.userRepository.countBy({
-            username: input.username,
-        }) > 0
+        const isDuplicatedUser =
+            (await this.userRepository.countBy({
+                username: input.username,
+            })) > 0;
 
         if (isDuplicatedUser) {
             return {
@@ -53,12 +60,12 @@ export class RemoteAddUserUseCase implements IAddUserUseCase {
             };
         }
 
-        const output = await this.userRepository.create(input)
+        const output = await this.userRepository.create(input);
 
         return {
             code: HttpStatus.OK,
             success: true,
-            data: output
+            data: output,
         };
     }
 }

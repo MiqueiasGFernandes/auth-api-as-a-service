@@ -5,4 +5,4 @@ export interface IUserRepository {
     create(data: UserInputDto): Promise<UserOutputDto>
 }
 
-export const USER_REPOSITORYU = 'IUserRepository'
+export const USER_REPOSITORY = 'IUserRepository'
