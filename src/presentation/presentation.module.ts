@@ -1,8 +1,8 @@
 import { Module } from "@nestjs/common";
+import { RegisterController } from "./controllers/register.controller";
 
 @Module({
-    controllers: [],
-    exports: [],
+    controllers: [RegisterController],
 })
 
 export class PresentationModule { }
