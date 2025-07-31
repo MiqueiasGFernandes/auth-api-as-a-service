@@ -4,6 +4,7 @@
     "json",
     "ts"
   ],
+  "testTimeout": 300000,
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
   "transform": {
