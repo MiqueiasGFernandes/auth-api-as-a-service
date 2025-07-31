@@ -9,6 +9,7 @@ import { InfraProviders } from "./infra.providers";
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
+            envFilePath: `.env.${process.env.NODE_ENV}`
         }),
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
