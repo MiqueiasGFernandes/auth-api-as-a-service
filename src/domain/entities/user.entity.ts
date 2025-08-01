@@ -17,9 +17,9 @@ export class UserEntity {
         const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         const hasValidEmail = emailRegex.test(this.username);
         const emailProvider = this.username.split("@")[1];
-        const dennyListEmails = ['temp@email.org']
+        const dennyListEmails = ['@email.org']
 
-        const isAllowedProvider = !!dennyListEmails.find(item => item === emailProvider)
+        const isAllowedProvider = !dennyListEmails.find(item => item === emailProvider)
 
         return hasValidEmail && isAllowedProvider
     }
