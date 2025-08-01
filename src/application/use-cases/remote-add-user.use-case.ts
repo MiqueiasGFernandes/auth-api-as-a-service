@@ -32,7 +32,7 @@ export class RemoteAddUserUseCase implements IAddUserUseCase {
             return {
                 code: HttpStatus.CONFLICT,
                 success: false,
-                error: `Your ${usernameFieldType} is invalid`,
+                error: `User ${input.username} already exists`,
             };
         }
 

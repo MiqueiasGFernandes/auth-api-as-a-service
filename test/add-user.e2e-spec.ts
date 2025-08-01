@@ -2,7 +2,7 @@ import { SETTINGS_FETCH_GATEWAY } from "@application/gateways";
 import { BootstrapModule } from "@bootstrap/bootstrap.module";
 import { faker } from "@faker-js/faker";
 import { TypeOrmUserModel } from "@infra/models";
-import type { INestApplication } from "@nestjs/common";
+import { type INestApplication, ValidationPipe } from "@nestjs/common";
 import { Test, type TestingModule } from "@nestjs/testing";
 import { HttpExceptionFilter } from "@presentation/filters/exception.filter";
 import { ResultInterceptor } from "@presentation/interceptors/response.interceptor";
@@ -24,14 +24,16 @@ describe("/signup", () => {
 
 		app.useGlobalFilters(new HttpExceptionFilter());
 		app.useGlobalInterceptors(new ResultInterceptor());
+		app.useGlobalPipes(new ValidationPipe({
+		}));
 
-		await app.init()
-	})
+		await app.init();
+	});
 
 	afterEach(async () => {
-		await app.close()
-		jest.clearAllMocks()
-	})
+		await app.close();
+		jest.clearAllMocks();
+	});
 
 	beforeAll(async () => {
 		dataSource = new DataSource({
@@ -95,86 +97,193 @@ describe("/signup", () => {
 		describe("WITH field type validation", () => {
 			test.each([
 				{
-					field: 'email',
-					fakerGenerator: faker.internet.username()
+					field: "email",
+					fakerGenerator: faker.internet.username(),
 				},
 				{
-					field: 'username',
-					fakerGenerator: faker.person.fullName()
+					field: "username",
+					fakerGenerator: faker.person.fullName(),
 				},
 				{
-					field: 'phone',
+					field: "phone",
 					fakerGenerator: faker.number.int({
-						max: 99
-					})
-				}
-			])("WHEN $field has an invalid pattern by field type EMAIL. SHOULD returns error code 422 ", async ({ field, fakerGenerator }) => {
-				const moduleFixture: TestingModule = await Test.createTestingModule({
-					imports: [BootstrapModule],
-				})
-					.overrideProvider(SETTINGS_FETCH_GATEWAY)
-					.useValue(new SettingsFetchGatewayStub({
-						AUTHENTICATION: {
-							USERNAME_FIELD_TYPE: field
-						}
-					}))
-					.compile()
-
-				app = moduleFixture.createNestApplication();
-
-				app.useGlobalFilters(new HttpExceptionFilter());
-				app.useGlobalInterceptors(new ResultInterceptor());
-
-				await app.init()
-
-				const body = {
-					username: fakerGenerator,
-					password: faker.internet.password({
-						length: 12,
-						prefix: "@1",
-						pattern: /[A-Za-z0-9]/,
+						max: 99,
 					}),
-				};
+				},
+			])(
+				"WHEN $field has an invalid pattern by field type EMAIL. SHOULD returns error code 422 ",
+				async ({ field, fakerGenerator }) => {
+					const moduleFixture: TestingModule = await Test.createTestingModule({
+						imports: [BootstrapModule],
+					})
+						.overrideProvider(SETTINGS_FETCH_GATEWAY)
+						.useValue(
+							new SettingsFetchGatewayStub({
+								AUTHENTICATION: {
+									USERNAME_FIELD_TYPE: field,
+								},
+							}),
+						)
+						.compile();
 
-				const response = await supertest(app.getHttpServer())
-					.post("/signup")
-					.send(body);
+					app = moduleFixture.createNestApplication();
 
-				queryBuilder = dataSource.createQueryBuilder<TypeOrmUserModel>(
-					TypeOrmUserModel,
-					"user",
-				);
-				const hasCreatedUser =
-					(await queryBuilder
-						.select("*")
-						.where({
-							username: body.username,
-						})
-						.getCount()) > 0;
+					app.useGlobalFilters(new HttpExceptionFilter());
+					app.useGlobalInterceptors(new ResultInterceptor());
+					app.useGlobalPipes(new ValidationPipe({
 
-				expect(response.body).toHaveProperty(
-					"error",
-					`Your ${field} is invalid`,
-				);
-				expect(response.statusCode).toBe(422);
-				expect(response.body).toHaveProperty("success", false);
-				expect(response.body).toHaveProperty("code", 422);
-				expect(hasCreatedUser).toBeFalsy();
-			});
-			// test("WHEN username has an invalid pattern by field type PHONE NUMBER. SHOULD returns error code 422 ", async () => { });
-			// test("WHEN username has an invalid pattern by field type USERNAME allowed params. SHOULD returns error code 422 ", async () => { });
-			// test("WHEN username is not a field type EMAIL. SHOULD returns error code 422 ", async () => { });
-			// test("WHEN username is not a field type PHONE NUMBER. SHOULD returns error code 422 ", async () => { });
-			// test("WHEN username is not a field type USERNAME allowed params. SHOULD returns error code 422 ", async () => { });
+					}));
+
+					await app.init();
+
+					const body = {
+						username: fakerGenerator,
+						password: faker.internet.password({
+							length: 12,
+							prefix: "@1",
+							pattern: /[A-Za-z0-9]/,
+						}),
+					};
+
+					const response = await supertest(app.getHttpServer())
+						.post("/signup")
+						.send(body);
+
+					queryBuilder = dataSource.createQueryBuilder<TypeOrmUserModel>(
+						TypeOrmUserModel,
+						"user",
+					);
+					const hasCreatedUser =
+						(await queryBuilder
+							.select("*")
+							.where({
+								username: body.username,
+							})
+							.getCount()) > 0;
+
+					expect(response.body).toHaveProperty(
+						"error",
+						`Your ${field} is invalid`,
+					);
+					expect(response.statusCode).toBe(422);
+					expect(response.body).toHaveProperty("success", false);
+					expect(response.body).toHaveProperty("code", 422);
+					expect(hasCreatedUser).toBeFalsy();
+				},
+			);
 		});
 		describe("WITH resource conflict", () => {
-			test("WHEN user with matching PHONE NUMBER already exists. SHOULD returns error code 409", async () => { });
-			test("WHEN user with matching USERNAME already exists. SHOULD returns error code 409", async () => { });
-			test("WHEN user with matching EMAIL already exists. SHOULD returns error code 409", async () => { });
+			test.each([
+				{
+					field: "email",
+					value: "fulano@gmail.com",
+				},
+				{
+					field: "username",
+					value: "foobaar",
+				},
+				{
+					field: "phone",
+					value: "+5511999999999",
+				},
+			])(
+				"WHEN user with matching PHONE NUMBER already exists. SHOULD returns error code 409",
+				async ({ field, value }) => {
+					queryBuilder = dataSource.createQueryBuilder<TypeOrmUserModel>(
+						TypeOrmUserModel,
+						"user",
+					);
+
+					await queryBuilder
+						.insert()
+						.into(TypeOrmUserModel)
+						.values({
+							username: value,
+							password: faker.internet.password(),
+						})
+						.execute();
+
+					const moduleFixture: TestingModule = await Test.createTestingModule({
+						imports: [BootstrapModule],
+					})
+						.overrideProvider(SETTINGS_FETCH_GATEWAY)
+						.useValue(
+							new SettingsFetchGatewayStub({
+								AUTHENTICATION: {
+									USERNAME_FIELD_TYPE: field,
+								},
+							}),
+						)
+						.compile();
+
+					app = moduleFixture.createNestApplication();
+
+					app.useGlobalFilters(new HttpExceptionFilter());
+					app.useGlobalInterceptors(new ResultInterceptor());
+					app.useGlobalPipes(new ValidationPipe({
+
+					}));
+
+					await app.init();
+
+					const body = {
+						username: value,
+						password: faker.internet.password({
+							length: 12,
+							prefix: "@1",
+							pattern: /[A-Za-z0-9]/,
+						}),
+					};
+
+					const response = await supertest(app.getHttpServer())
+						.post("/signup")
+						.send(body);
+
+					expect(response.body).toHaveProperty(
+						"error",
+						`User ${value} already exists`,
+					);
+					expect(response.statusCode).toBe(409);
+					expect(response.body).toHaveProperty("success", false);
+					expect(response.body).toHaveProperty("code", 409);
+				},
+			);
 		});
 		describe("WITH input validation", () => {
-			test("WHEN user is creating without username. SHOULD returns error code 422", async () => { });
-			test("WHEN user is creating without password. SHOULD returns error code 422", async () => { });
+			test.each([
+				{
+					field: "username",
+				},
+				{
+					field: "password",
+				},
+			])(
+				"WHEN user is creating without $field string. SHOULD returns error code 422",
+				async ({ field }) => {
+					const body = {
+						username: faker.internet.email(),
+						password: faker.internet.password({
+							length: 12,
+							prefix: "@1",
+							pattern: /[A-Za-z0-9]/,
+						}),
+					};
+
+					body[field] = undefined;
+
+					const response = await supertest(app.getHttpServer())
+						.post("/signup")
+						.send(body);
+
+					expect(response.body).toHaveProperty(
+						"error",
+						''
+					);
+					expect(response.statusCode).toBe(409);
+					expect(response.body).toHaveProperty("success", false);
+					expect(response.body).toHaveProperty("code", 409);
+				},
+			);
 		});
 		describe("WITH success", () => {
 			test("WHEN user two users are created simulteanely. SHOULD be idempotent", async () => { });

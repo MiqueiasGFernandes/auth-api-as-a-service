@@ -1,3 +1,4 @@
+import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { HttpExceptionFilter } from "@presentation/filters/exception.filter";
 import { ResultInterceptor } from "@presentation/interceptors/response.interceptor";
@@ -8,6 +9,9 @@ async function bootstrap() {
 
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new ResultInterceptor());
+  app.useGlobalPipes(new ValidationPipe({
+    transform: true
+  }));
 
   await app.listen(3000);
 }
