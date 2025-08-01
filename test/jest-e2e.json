@@ -4,6 +4,9 @@
     "json",
     "ts"
   ],
+  "setupFiles": [
+    "./setup/load-envs.ts"
+  ],
   "testTimeout": 300000,
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
@@ -15,7 +18,8 @@
     "^@domain/(.*)$": "<rootDir>/../src/domain/$1",
     "^@infra/(.*)$": "<rootDir>/../src/infra/$1",
     "^@presentation/(.*)$": "<rootDir>/../src/presentation/$1",
-    "^@config/(.*)$": "<rootDir>/../src/config/$1"
+    "^@config/(.*)$": "<rootDir>/../src/config/$1",
+    "^@bootstrap/(.*)$": "<rootDir>/../src/bootstrap/$1"
   },
   "detectOpenHandles": true
 }

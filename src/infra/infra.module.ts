@@ -4,6 +4,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { InfraProviders } from "./infra.providers";
+import { TypeOrmUserModel } from "./models";
 
 @Module({
     imports: [
@@ -21,7 +22,7 @@ import { InfraProviders } from "./infra.providers";
                 username: configService.getOrThrow("POSTGRES_USER"),
                 password: configService.getOrThrow("POSTGRES_PASSWORD"),
                 database: configService.getOrThrow("POSTGRES_DB"),
-                entities: [],
+                entities: [TypeOrmUserModel],
             }),
         }),
     ],

@@ -1,37 +1,34 @@
 import type { UserInputDto, UserOutputDto } from "@application/dto";
 import type { IUserRepository } from "@application/repositories";
+import { TypeOrmUserModel } from "@infra/models";
 import { Inject, Injectable } from "@nestjs/common";
 import { getDataSourceToken } from "@nestjs/typeorm";
-import type { DataSource, SelectQueryBuilder } from "typeorm";
+import type { DataSource } from "typeorm";
 
 @Injectable()
 export class TypeOrmuUserRepository implements IUserRepository {
-    private readonly queryBuilder: SelectQueryBuilder<unknown>
-
     constructor(
-        @Inject(getDataSourceToken()) private readonly dataSource: DataSource
-    ) {
-        this.queryBuilder = this.dataSource.createQueryBuilder()
-    }
+        @Inject(getDataSourceToken()) private readonly dataSource: DataSource,
+    ) { }
 
     async countBy(where: Partial<UserInputDto>): Promise<number> {
-        const count = await this.queryBuilder
-            .select('id')
-            .from('users', 'user')
+        const count = await this.dataSource
+            .createQueryBuilder(TypeOrmUserModel, "users")
             .where(where)
-            .getCount()
+            .getCount();
 
         return count;
     }
 
     async create(data: UserInputDto): Promise<UserOutputDto> {
-        const newUser = await this.queryBuilder
+        const result = await this.dataSource
+            .createQueryBuilder()
             .insert()
-            .into('users', Object.keys(data))
+            .into(TypeOrmUserModel)
             .values(data)
             .returning("*")
-            .execute()
+            .execute();
 
-        return newUser.raw[0];
+        return result.raw[0];
     }
 }
