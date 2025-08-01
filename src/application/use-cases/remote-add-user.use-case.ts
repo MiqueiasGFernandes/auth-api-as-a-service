@@ -41,7 +41,7 @@ export class RemoteAddUserUseCase implements IAddUserUseCase {
         const isValidUsername =
             userEntity.isValidUsernameByFieldType(usernameFieldType);
 
-        if (isValidUsername) {
+        if (!isValidUsername) {
             return {
                 code: HttpStatus.UNPROCESSABLE_ENTITY,
                 success: false,
