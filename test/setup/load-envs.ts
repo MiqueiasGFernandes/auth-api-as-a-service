@@ -1,0 +1,15 @@
+import * as path from "node:path";
+import { config } from "dotenv";
+
+function loadEnvs() {
+    const { error } = config({
+        path: path.resolve(process.cwd(), ".env.test"),
+        debug: true,
+    });
+
+    if (error) {
+        throw new Error(error.message);
+    }
+}
+
+loadEnvs();
