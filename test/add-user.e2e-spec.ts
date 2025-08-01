@@ -1,66 +1,115 @@
-import { faker } from "@faker-js/faker/.";
+import { BootstrapModule } from "@bootstrap/bootstrap.module";
+import { faker } from "@faker-js/faker";
+import { TypeOrmUserModel } from "@infra/models";
 import type { INestApplication } from "@nestjs/common";
 import { Test, type TestingModule } from "@nestjs/testing";
+import { HttpExceptionFilter } from "@presentation/filters/exception.filter";
+import { ResultInterceptor } from "@presentation/interceptors/response.interceptor";
 import * as supertest from "supertest";
-import type { QueryBuilder } from "typeorm";
-import { AppModule } from "../src/application/application.module";
-import { TestDatabaseConnection } from "./fixtures/test-database-connection";
+import { DataSource, type QueryBuilder } from "typeorm";
 
 describe("/signup", () => {
 	let app: INestApplication;
-	let databaseTestConnection: TestDatabaseConnection;
+	let dataSource: DataSource;
 	let queryBuilder: QueryBuilder<unknown>;
 
 	beforeAll(async () => {
 		const moduleFixture: TestingModule = await Test.createTestingModule({
-			imports: [AppModule],
+			imports: [BootstrapModule],
 		}).compile();
 
-		app = moduleFixture.createNestApplication();
-		await app.init();
+		dataSource = new DataSource({
+			type: "postgres",
+			host: process.env.POSTGRES_HOST,
+			port: Number(process.env.POSTGRES_PORT),
+			username: process.env.POSTGRES_USER,
+			password: process.env.POSTGRES_PASSWORD,
+			database: process.env.POSTGRES_DB,
+			entities: [TypeOrmUserModel],
+			synchronize: true,
+		});
 
-		databaseTestConnection = new TestDatabaseConnection();
-		await databaseTestConnection.connect();
-		queryBuilder = databaseTestConnection.makeQueryBuilder();
+		app = moduleFixture.createNestApplication();
+
+		app.useGlobalFilters(new HttpExceptionFilter());
+		app.useGlobalInterceptors(new ResultInterceptor());
+
+		await Promise.all([
+			app.init(),
+			dataSource.initialize()
+		]);
+	});
+	afterAll(async () => {
+		queryBuilder = dataSource.createQueryBuilder<TypeOrmUserModel>(
+			TypeOrmUserModel,
+			"user",
+		)
+
+		await queryBuilder
+			.delete()
+			.where("1=1")
+			.execute()
+
+		await Promise.all([
+			app.close(),
+			dataSource.destroy(),
+		]);
 	});
 
 	describe("[POST] /signup", () => {
-		test("WHEN user is creating with strongless password. SHOULD returns error code 400", async () => {
-			const body = {
-				username: faker.internet.username(),
-				password: faker.internet.password(),
-			};
+		describe('WITH password validation', () => {
+			test("WHEN user is creating with strongless password. SHOULD returns error code 400", async () => {
+				const body = {
+					username: faker.internet.email(),
+					password: faker.word.noun(),
+				};
 
-			const response = await supertest(app).post("/signup").send(body);
+				const response = await supertest(app.getHttpServer())
+					.post("/signup")
+					.send(body);
 
-			const hasCreatedUser =
-				(await queryBuilder
-					.select("*")
-					.where({
-						username: body.username,
-					})
-					.getCount()) > 0;
+				queryBuilder = dataSource.createQueryBuilder<TypeOrmUserModel>(
+					TypeOrmUserModel,
+					"user",
+				);
+				const hasCreatedUser =
+					(await queryBuilder
+						.select("*")
+						.where({
+							username: body.username,
+						})
+						.getCount()) > 0;
 
-			expect(response.statusCode).toBe(400);
-			expect(response.body).toHaveProperty("success", false);
-			expect(response.body).toHaveProperty("success", false);
-			expect(response.body).toHaveProperty("code", 400);
-			expect(response.body).toHaveProperty("code", 400);
-			expect(hasCreatedUser).toBeFalsy();
-			expect(response.body).not.toHaveProperty(
-				"error",
-				"Your password must contain upper and lower case characters, numbers and symbols",
-			);
+				expect(response.body).toHaveProperty(
+					"error",
+					"Your password must contain upper and lower case characters, numbers and symbols",
+				);
+				expect(response.statusCode).toBe(400);
+				expect(response.body).toHaveProperty("success", false);
+				expect(response.body).toHaveProperty("code", 400);
+				expect(hasCreatedUser).toBeFalsy();
+			});
 		});
-		test("WHEN username has an invalid pattern by field type EMAIL. SHOULD returns error code 419 ", () => { });
-		test("WHEN username has an invalid pattern by field type PHONE NUMBER. SHOULD returns error code 419 ", () => { });
-		test("WHEN username has an invalid pattern by field type USERNAME allowed params. SHOULD returns error code 419 ", () => { });
-		test("WHEN user is creating without username. SHOULD returns error code 419", () => { });
-		test("WHEN user is creating without password. SHOULD returns error code 419", () => { });
-		test("WHEN user with matching PHONE NUMBER already exists. SHOULD returns error code 409", () => { });
-		test("WHEN user with matching USERNAME already exists. SHOULD returns error code 409", () => { });
-		test("WHEN user with matching EMAIL already exists. SHOULD returns error code 409", () => { });
-		test("WHEN user two users are created simulteanely. SHOULD be idempotent", () => { });
-		test("WHEN user is successfully created. SHOULD exists in database", () => { });
+		describe('WITH field type validation', () => {
+			test("WHEN username has an invalid pattern by field type EMAIL. SHOULD returns error code 419 ", async () => { });
+			test("WHEN username has an invalid pattern by field type PHONE NUMBER. SHOULD returns error code 419 ", async () => { });
+			test("WHEN username has an invalid pattern by field type USERNAME allowed params. SHOULD returns error code 419 ", async () => { });
+			test("WHEN username is not a field type EMAIL. SHOULD returns error code 419 ", async () => { });
+			test("WHEN username is not a field type PHONE NUMBER. SHOULD returns error code 419 ", async () => { });
+			test("WHEN username is not a field type USERNAME allowed params. SHOULD returns error code 419 ", async () => { });
+		});
+		describe('WITH resource conflict', () => {
+			test("WHEN user with matching PHONE NUMBER already exists. SHOULD returns error code 409", async () => { });
+			test("WHEN user with matching USERNAME already exists. SHOULD returns error code 409", async () => { });
+			test("WHEN user with matching EMAIL already exists. SHOULD returns error code 409", async () => { });
+		});
+		describe('WITH input validation', () => {
+			test("WHEN user is creating without username. SHOULD returns error code 419", async () => { });
+			test("WHEN user is creating without password. SHOULD returns error code 419", async () => { });
+		});
+		describe('WITH success', () => {
+			test("WHEN user two users are created simulteanely. SHOULD be idempotent", async () => { });
+			test("WHEN user is successfully created. SHOULD exists in database", async () => { });
+		});
 	});
 });
