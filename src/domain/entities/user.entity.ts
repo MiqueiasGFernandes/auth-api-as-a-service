@@ -1,4 +1,4 @@
-export type FieldType = "username" | "email" | "phone"
+export type FieldType = "plainUsername" | "email" | "phone"
 
 export class UserEntity {
     constructor(
@@ -38,18 +38,18 @@ export class UserEntity {
 
     isValidUsernameByFieldType(fieldType: FieldType): boolean {
         const validatorsByContext: Record<FieldType, () => boolean> = {
-            email: this.isValidEmail,
-            phone: this.isValidPhoneNumber,
-            username: this.isValidPlainUsername
+            email: this.isValidEmail.bind(this),
+            phone: this.isValidPhoneNumber.bind(this),
+            plainUsername: this.isValidPlainUsername.bind(this)
         }
 
         return validatorsByContext[fieldType]()
     }
 
     isStrongPassword(): boolean {
-        const hasUppercase = /A-Z/.test(this.password);
-        const hasNumbers = /0-9/.test(this.password);
-        const hasLowercase = /a-z/.test(this.password);
+        const hasUppercase = /[A-Z]/.test(this.password);
+        const hasNumbers = /[0-9]/.test(this.password);
+        const hasLowercase = /[a-z]/.test(this.password);
         const hasSymbols = /[^A-Za-z0-9\s]/.test(this.password);
 
         return hasLowercase && hasUppercase && hasNumbers && hasSymbols;
