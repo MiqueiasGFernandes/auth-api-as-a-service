@@ -1,4 +1,4 @@
-export type FieldType = "plainUsername" | "email" | "phone"
+export type FieldType = "username" | "email" | "phone"
 
 export class UserEntity {
     constructor(
@@ -40,7 +40,7 @@ export class UserEntity {
         const validatorsByContext: Record<FieldType, () => boolean> = {
             email: this.isValidEmail.bind(this),
             phone: this.isValidPhoneNumber.bind(this),
-            plainUsername: this.isValidPlainUsername.bind(this)
+            username: this.isValidPlainUsername.bind(this)
         }
 
         return validatorsByContext[fieldType]()
