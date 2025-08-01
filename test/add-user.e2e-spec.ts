@@ -34,30 +34,25 @@ describe("/signup", () => {
 		app.useGlobalFilters(new HttpExceptionFilter());
 		app.useGlobalInterceptors(new ResultInterceptor());
 
-		await Promise.all([
-			app.init(),
-			dataSource.initialize()
-		]);
+		await Promise.all([app.init(), dataSource.initialize()]);
 	});
 	afterAll(async () => {
 		queryBuilder = dataSource.createQueryBuilder<TypeOrmUserModel>(
 			TypeOrmUserModel,
 			"user",
-		)
+		);
 
-		await queryBuilder
-			.delete()
-			.where("1=1")
-			.execute()
+		await queryBuilder.delete().where("1=1").execute();
 
-		await Promise.all([
-			app.close(),
-			dataSource.destroy(),
-		]);
+		await Promise.all([app.close(), dataSource.destroy()]);
 	});
 
+	afterEach(async () => {
+		jest.clearAllMocks()
+	})
+
 	describe("[POST] /signup", () => {
-		describe('WITH password validation', () => {
+		describe("WITH password validation", () => {
 			test("WHEN user is creating with strongless password. SHOULD returns error code 400", async () => {
 				const body = {
 					username: faker.internet.email(),
@@ -90,24 +85,64 @@ describe("/signup", () => {
 				expect(hasCreatedUser).toBeFalsy();
 			});
 		});
-		describe('WITH field type validation', () => {
-			test("WHEN username has an invalid pattern by field type EMAIL. SHOULD returns error code 419 ", async () => { });
-			test("WHEN username has an invalid pattern by field type PHONE NUMBER. SHOULD returns error code 419 ", async () => { });
-			test("WHEN username has an invalid pattern by field type USERNAME allowed params. SHOULD returns error code 419 ", async () => { });
-			test("WHEN username is not a field type EMAIL. SHOULD returns error code 419 ", async () => { });
-			test("WHEN username is not a field type PHONE NUMBER. SHOULD returns error code 419 ", async () => { });
-			test("WHEN username is not a field type USERNAME allowed params. SHOULD returns error code 419 ", async () => { });
+		describe("WITH field type validation", () => {
+			test("WHEN username has an invalid pattern by field type EMAIL. SHOULD returns error code 422 ", async () => {
+				jest.mock("@config/settings", () => ({
+					AUTHENTICATION: {
+						USERNAME_FIELD_TYPE: 'email'
+					}
+				}))
+
+				const body = {
+					username: faker.internet.username(),
+					password: faker.internet.password({
+						length: 12,
+						prefix: "@1",
+						pattern: /[A-Za-z0-9]/,
+					}),
+				};
+
+				const response = await supertest(app.getHttpServer())
+					.post("/signup")
+					.send(body);
+
+				queryBuilder = dataSource.createQueryBuilder<TypeOrmUserModel>(
+					TypeOrmUserModel,
+					"user",
+				);
+				const hasCreatedUser =
+					(await queryBuilder
+						.select("*")
+						.where({
+							username: body.username,
+						})
+						.getCount()) > 0;
+
+				expect(response.body).toHaveProperty(
+					"error",
+					"Your email is invalid",
+				);
+				expect(response.statusCode).toBe(422);
+				expect(response.body).toHaveProperty("success", false);
+				expect(response.body).toHaveProperty("code", 422);
+				expect(hasCreatedUser).toBeFalsy();
+			});
+			test("WHEN username has an invalid pattern by field type PHONE NUMBER. SHOULD returns error code 422 ", async () => { });
+			test("WHEN username has an invalid pattern by field type USERNAME allowed params. SHOULD returns error code 422 ", async () => { });
+			test("WHEN username is not a field type EMAIL. SHOULD returns error code 422 ", async () => { });
+			test("WHEN username is not a field type PHONE NUMBER. SHOULD returns error code 422 ", async () => { });
+			test("WHEN username is not a field type USERNAME allowed params. SHOULD returns error code 422 ", async () => { });
 		});
-		describe('WITH resource conflict', () => {
+		describe("WITH resource conflict", () => {
 			test("WHEN user with matching PHONE NUMBER already exists. SHOULD returns error code 409", async () => { });
 			test("WHEN user with matching USERNAME already exists. SHOULD returns error code 409", async () => { });
 			test("WHEN user with matching EMAIL already exists. SHOULD returns error code 409", async () => { });
 		});
-		describe('WITH input validation', () => {
-			test("WHEN user is creating without username. SHOULD returns error code 419", async () => { });
-			test("WHEN user is creating without password. SHOULD returns error code 419", async () => { });
+		describe("WITH input validation", () => {
+			test("WHEN user is creating without username. SHOULD returns error code 422", async () => { });
+			test("WHEN user is creating without password. SHOULD returns error code 422", async () => { });
 		});
-		describe('WITH success', () => {
+		describe("WITH success", () => {
 			test("WHEN user two users are created simulteanely. SHOULD be idempotent", async () => { });
 			test("WHEN user is successfully created. SHOULD exists in database", async () => { });
 		});
