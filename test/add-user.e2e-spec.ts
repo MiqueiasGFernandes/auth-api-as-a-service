@@ -1,3 +1,4 @@
+import { SETTINGS_FETCH_GATEWAY } from "@application/gateways";
 import { BootstrapModule } from "@bootstrap/bootstrap.module";
 import { faker } from "@faker-js/faker";
 import { TypeOrmUserModel } from "@infra/models";
@@ -7,17 +8,32 @@ import { HttpExceptionFilter } from "@presentation/filters/exception.filter";
 import { ResultInterceptor } from "@presentation/interceptors/response.interceptor";
 import * as supertest from "supertest";
 import { DataSource, type QueryBuilder } from "typeorm";
+import { SettingsFetchGatewayStub } from "./stub/settings-fetch-gateway.stub";
 
 describe("/signup", () => {
 	let app: INestApplication;
 	let dataSource: DataSource;
 	let queryBuilder: QueryBuilder<unknown>;
 
-	beforeAll(async () => {
+	beforeEach(async () => {
 		const moduleFixture: TestingModule = await Test.createTestingModule({
 			imports: [BootstrapModule],
 		}).compile();
 
+		app = moduleFixture.createNestApplication();
+
+		app.useGlobalFilters(new HttpExceptionFilter());
+		app.useGlobalInterceptors(new ResultInterceptor());
+
+		await app.init()
+	})
+
+	afterEach(async () => {
+		await app.close()
+		jest.clearAllMocks()
+	})
+
+	beforeAll(async () => {
 		dataSource = new DataSource({
 			type: "postgres",
 			host: process.env.POSTGRES_HOST,
@@ -29,12 +45,7 @@ describe("/signup", () => {
 			synchronize: true,
 		});
 
-		app = moduleFixture.createNestApplication();
-
-		app.useGlobalFilters(new HttpExceptionFilter());
-		app.useGlobalInterceptors(new ResultInterceptor());
-
-		await Promise.all([app.init(), dataSource.initialize()]);
+		await dataSource.initialize();
 	});
 	afterAll(async () => {
 		queryBuilder = dataSource.createQueryBuilder<TypeOrmUserModel>(
@@ -44,12 +55,8 @@ describe("/signup", () => {
 
 		await queryBuilder.delete().where("1=1").execute();
 
-		await Promise.all([app.close(), dataSource.destroy()]);
+		await dataSource.destroy();
 	});
-
-	afterEach(async () => {
-		jest.clearAllMocks()
-	})
 
 	describe("[POST] /signup", () => {
 		describe("WITH password validation", () => {
@@ -86,15 +93,42 @@ describe("/signup", () => {
 			});
 		});
 		describe("WITH field type validation", () => {
-			test("WHEN username has an invalid pattern by field type EMAIL. SHOULD returns error code 422 ", async () => {
-				jest.mock("@config/settings", () => ({
-					AUTHENTICATION: {
-						USERNAME_FIELD_TYPE: 'email'
-					}
-				}))
+			test.each([
+				{
+					field: 'email',
+					fakerGenerator: faker.internet.username()
+				},
+				{
+					field: 'username',
+					fakerGenerator: faker.person.fullName()
+				},
+				{
+					field: 'phone',
+					fakerGenerator: faker.number.int({
+						max: 99
+					})
+				}
+			])("WHEN $field has an invalid pattern by field type EMAIL. SHOULD returns error code 422 ", async ({ field, fakerGenerator }) => {
+				const moduleFixture: TestingModule = await Test.createTestingModule({
+					imports: [BootstrapModule],
+				})
+					.overrideProvider(SETTINGS_FETCH_GATEWAY)
+					.useValue(new SettingsFetchGatewayStub({
+						AUTHENTICATION: {
+							USERNAME_FIELD_TYPE: field
+						}
+					}))
+					.compile()
+
+				app = moduleFixture.createNestApplication();
+
+				app.useGlobalFilters(new HttpExceptionFilter());
+				app.useGlobalInterceptors(new ResultInterceptor());
+
+				await app.init()
 
 				const body = {
-					username: faker.internet.username(),
+					username: fakerGenerator,
 					password: faker.internet.password({
 						length: 12,
 						prefix: "@1",
@@ -120,18 +154,18 @@ describe("/signup", () => {
 
 				expect(response.body).toHaveProperty(
 					"error",
-					"Your email is invalid",
+					`Your ${field} is invalid`,
 				);
 				expect(response.statusCode).toBe(422);
 				expect(response.body).toHaveProperty("success", false);
 				expect(response.body).toHaveProperty("code", 422);
 				expect(hasCreatedUser).toBeFalsy();
 			});
-			test("WHEN username has an invalid pattern by field type PHONE NUMBER. SHOULD returns error code 422 ", async () => { });
-			test("WHEN username has an invalid pattern by field type USERNAME allowed params. SHOULD returns error code 422 ", async () => { });
-			test("WHEN username is not a field type EMAIL. SHOULD returns error code 422 ", async () => { });
-			test("WHEN username is not a field type PHONE NUMBER. SHOULD returns error code 422 ", async () => { });
-			test("WHEN username is not a field type USERNAME allowed params. SHOULD returns error code 422 ", async () => { });
+			// test("WHEN username has an invalid pattern by field type PHONE NUMBER. SHOULD returns error code 422 ", async () => { });
+			// test("WHEN username has an invalid pattern by field type USERNAME allowed params. SHOULD returns error code 422 ", async () => { });
+			// test("WHEN username is not a field type EMAIL. SHOULD returns error code 422 ", async () => { });
+			// test("WHEN username is not a field type PHONE NUMBER. SHOULD returns error code 422 ", async () => { });
+			// test("WHEN username is not a field type USERNAME allowed params. SHOULD returns error code 422 ", async () => { });
 		});
 		describe("WITH resource conflict", () => {
 			test("WHEN user with matching PHONE NUMBER already exists. SHOULD returns error code 409", async () => { });
