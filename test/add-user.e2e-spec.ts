@@ -33,6 +33,13 @@ describe("/signup", () => {
 	afterEach(async () => {
 		await app.close();
 		jest.clearAllMocks();
+
+		queryBuilder = dataSource.createQueryBuilder<TypeOrmUserModel>(
+			TypeOrmUserModel,
+			"user",
+		);
+
+		await queryBuilder.delete().where("1=1").execute();
 	});
 
 	beforeAll(async () => {
@@ -50,13 +57,6 @@ describe("/signup", () => {
 		await dataSource.initialize();
 	});
 	afterAll(async () => {
-		queryBuilder = dataSource.createQueryBuilder<TypeOrmUserModel>(
-			TypeOrmUserModel,
-			"user",
-		);
-
-		await queryBuilder.delete().where("1=1").execute();
-
 		await dataSource.destroy();
 	});
 
@@ -330,6 +330,45 @@ describe("/signup", () => {
 			);
 		});
 		describe("WITH success", () => {
+			test("WHEN user is successfully created. SHOULD exists in database", async () => {
+				const body = {
+					username: faker.internet.email(),
+					password: faker.internet.password({
+						length: 12,
+						prefix: "@1M",
+						pattern: /[A-Za-z0-9]/,
+					}),
+				};
+
+				const response = await supertest(app.getHttpServer())
+					.post("/signup")
+					.send(body);
+
+				queryBuilder = dataSource.createQueryBuilder<TypeOrmUserModel>(
+					TypeOrmUserModel,
+					"user",
+				);
+				const hasCreatedUser =
+					(await queryBuilder
+						.select("*")
+						.where({
+							username: body.username,
+						})
+						.getCount()) > 0;
+
+				expect(response.body).not.toHaveProperty(
+					"error",
+				);
+				expect(response.statusCode).toBe(201);
+				expect(response.body).toHaveProperty("success", true);
+				expect(typeof response.body.data).toBe("object")
+				expect(response.body.data).not.toHaveProperty("password");
+				expect(response.body.data).toHaveProperty("username", body.username);
+				expect(response.body.data).toHaveProperty("id");
+				expect(response.body.data).toHaveProperty("created_at");
+				expect(response.body.data).toHaveProperty("updated_at");
+				expect(hasCreatedUser).toBeTruthy();
+			});
 			// test("WHEN user two users are created simulteanely. SHOULD be idempotent", async () => {
 			// 	const body = {
 			// 		username: faker.internet.email(),
@@ -365,7 +404,6 @@ describe("/signup", () => {
 			// 	expect(response.body).toHaveProperty("code", 400);
 			// 	expect(hasCreatedUser).toBeFalsy();
 			// });
-			test("WHEN user is successfully created. SHOULD exists in database", async () => { });
 		});
 	});
 });
