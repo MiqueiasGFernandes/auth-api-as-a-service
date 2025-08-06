@@ -22,13 +22,20 @@ export class TypeOrmuUserRepository implements IUserRepository {
 
     async create(data: UserInputDto): Promise<UserOutputDto> {
         const result = await this.dataSource
-            .createQueryBuilder()
+            .createQueryBuilder(TypeOrmUserModel, "users")
             .insert()
             .into(TypeOrmUserModel)
             .values(data)
             .returning("*")
             .execute();
 
-        return result.raw[0];
+        const user = result.raw[0]
+
+        return {
+            id: user.id,
+            username: user.username,
+            created_at: user.created_at,
+            updated_at: user.updated_at,
+        }
     }
 }
