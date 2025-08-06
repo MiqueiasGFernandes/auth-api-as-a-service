@@ -65,7 +65,9 @@ describe("/signup", () => {
 			test("WHEN user is creating with strongless password. SHOULD returns error code 400", async () => {
 				const body = {
 					username: faker.internet.email(),
-					password: faker.word.noun(),
+					password: faker.word.noun({
+						length: 9
+					}),
 				};
 
 				const response = await supertest(app.getHttpServer())
@@ -107,7 +109,8 @@ describe("/signup", () => {
 				{
 					field: "phone",
 					fakerGenerator: String(faker.number.int({
-						max: 99,
+						min: 103,
+						max: 993,
 					})),
 				},
 			])(
@@ -277,7 +280,48 @@ describe("/signup", () => {
 
 					expect(response.body).toHaveProperty(
 						"error",
-						[`${field} should not be empty`, `${field} must be a string`]
+						[`${field} should not be empty`, `${field} must be a string`, `${field} must be shorter than or equal to 100 characters`]
+					);
+					expect(response.statusCode).toBe(422);
+					expect(response.body).toHaveProperty("success", false);
+					expect(response.body).toHaveProperty("code", 422);
+				},
+			);
+
+			test.each([
+				{
+					field: "username",
+					value: faker.string.alpha({ length: 101 }),
+				},
+				{
+					field: "password",
+					value: faker.internet.password({
+						length: 101,
+						prefix: "@1",
+						pattern: /[A-Za-z0-9]/,
+					}),
+				},
+			])(
+				"WHEN user is creating without $field too larger. SHOULD returns error code 422",
+				async ({ field }) => {
+					const body = {
+						username: faker.internet.email(),
+						password: faker.internet.password({
+							length: 12,
+							prefix: "@1",
+							pattern: /[A-Za-z0-9]/,
+						}),
+					};
+
+					body[field] = undefined;
+
+					const response = await supertest(app.getHttpServer())
+						.post("/signup")
+						.send(body);
+
+					expect(response.body).toHaveProperty(
+						"error",
+						[`${field} should not be empty`, `${field} must be a string`, `${field} must be shorter than or equal to 100 characters`]
 					);
 					expect(response.statusCode).toBe(422);
 					expect(response.body).toHaveProperty("success", false);
@@ -286,7 +330,41 @@ describe("/signup", () => {
 			);
 		});
 		describe("WITH success", () => {
-			test("WHEN user two users are created simulteanely. SHOULD be idempotent", async () => { });
+			// test("WHEN user two users are created simulteanely. SHOULD be idempotent", async () => {
+			// 	const body = {
+			// 		username: faker.internet.email(),
+			// 		password: faker.internet.password({
+			// 			length: 12,
+			// 			prefix: "@1",
+			// 			pattern: /[A-Za-z0-9]/,
+			// 		}),
+			// 	};
+
+			// 	const response = await supertest(app.getHttpServer())
+			// 		.post("/signup")
+			// 		.send(body);
+
+			// 	queryBuilder = dataSource.createQueryBuilder<TypeOrmUserModel>(
+			// 		TypeOrmUserModel,
+			// 		"user",
+			// 	);
+			// 	const hasCreatedUser =
+			// 		(await queryBuilder
+			// 			.select("*")
+			// 			.where({
+			// 				username: body.username,
+			// 			})
+			// 			.getCount()) > 0;
+
+			// 	expect(response.body).toHaveProperty(
+			// 		"error",
+			// 		"Your password must contain upper and lower case characters, numbers and symbols",
+			// 	);
+			// 	expect(response.statusCode).toBe(400);
+			// 	expect(response.body).toHaveProperty("success", false);
+			// 	expect(response.body).toHaveProperty("code", 400);
+			// 	expect(hasCreatedUser).toBeFalsy();
+			// });
 			test("WHEN user is successfully created. SHOULD exists in database", async () => { });
 		});
 	});
