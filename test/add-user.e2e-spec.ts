@@ -106,9 +106,9 @@ describe("/signup", () => {
 				},
 				{
 					field: "phone",
-					fakerGenerator: faker.number.int({
+					fakerGenerator: String(faker.number.int({
 						max: 99,
-					}),
+					})),
 				},
 			])(
 				"WHEN $field has an invalid pattern by field type EMAIL. SHOULD returns error code 422 ",
@@ -277,11 +277,11 @@ describe("/signup", () => {
 
 					expect(response.body).toHaveProperty(
 						"error",
-						''
+						[`${field} should not be empty`, `${field} must be a string`]
 					);
-					expect(response.statusCode).toBe(409);
+					expect(response.statusCode).toBe(422);
 					expect(response.body).toHaveProperty("success", false);
-					expect(response.body).toHaveProperty("code", 409);
+					expect(response.body).toHaveProperty("code", 422);
 				},
 			);
 		});
