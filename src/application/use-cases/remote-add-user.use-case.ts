@@ -4,6 +4,10 @@ import {
     SETTINGS_FETCH_GATEWAY,
 } from "@application/gateways";
 import { UserMapper } from "@application/mappers";
+import {
+    type IPasswordEncryptorPort,
+    PASSWORD_ENCRYPTATOR_PORT,
+} from "@application/ports";
 import type { IUserRepository } from "@application/repositories";
 import { USER_REPOSITORY } from "@application/repositories/user.repository";
 import type { FieldType } from "@domain/entities";
@@ -17,6 +21,8 @@ export class RemoteAddUserUseCase implements IAddUserUseCase {
         private readonly settingsFetcherGateway: ISettingsFetcherGateway,
         @Inject(USER_REPOSITORY)
         private readonly userRepository: IUserRepository,
+        @Inject(PASSWORD_ENCRYPTATOR_PORT)
+        private readonly passwordEncryptator: IPasswordEncryptorPort,
     ) { }
     async execute(input: UserInputDto): Promise<Result<UserOutputDto>> {
         const usernameFieldType = await this.settingsFetcherGateway.get<FieldType>(
@@ -59,6 +65,8 @@ export class RemoteAddUserUseCase implements IAddUserUseCase {
                     "Your password must contain upper and lower case characters, numbers and symbols",
             };
         }
+
+        input.password = await this.passwordEncryptator.encrypt(input.password)
 
         const output = await this.userRepository.create(input);
 
