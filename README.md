@@ -38,7 +38,7 @@ Este projeto segue a estrutura da **Clean Architecture** com separação clara d
 
 | Método | Endpoint                  | Descrição                        |
 |--------|---------------------------|----------------------------------|
-| POST   | `/register`               | Cadastro de novo usuário         |
+| POST   | `/signup`               | Cadastro de novo usuário         |
 | POST   | `/login`                  | Login com e-mail e senha         |
 | POST   | `/oauth/authorize`        | Início do fluxo OAuth2           |
 | POST   | `/token`                  | Geração/renovação de tokens      |
