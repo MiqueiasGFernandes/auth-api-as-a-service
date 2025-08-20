@@ -24,8 +24,7 @@ describe("/signup", () => {
 
 		app.useGlobalFilters(new HttpExceptionFilter());
 		app.useGlobalInterceptors(new ResultInterceptor());
-		app.useGlobalPipes(new ValidationPipe({
-		}));
+		app.useGlobalPipes(new ValidationPipe());
 
 		await app.init();
 	});
@@ -369,41 +368,49 @@ describe("/signup", () => {
 				expect(response.body.data).toHaveProperty("updated_at");
 				expect(hasCreatedUser).toBeTruthy();
 			});
-			// test("WHEN user two users are created simulteanely. SHOULD be idempotent", async () => {
-			// 	const body = {
-			// 		username: faker.internet.email(),
-			// 		password: faker.internet.password({
-			// 			length: 12,
-			// 			prefix: "@1",
-			// 			pattern: /[A-Za-z0-9]/,
-			// 		}),
-			// 	};
+			test("WHEN user two users are created simulteanely. SHOULD be idempotent", async () => {
+				const body = {
+					username: faker.internet.email(),
+					password: faker.internet.password({
+						length: 12,
+						prefix: "@1",
+						pattern: /[A-Za-z0-9]/,
+					}),
+				};
 
-			// 	const response = await supertest(app.getHttpServer())
-			// 		.post("/signup")
-			// 		.send(body);
+				const idempotentKeyValue = faker.string.uuid();
 
-			// 	queryBuilder = dataSource.createQueryBuilder<TypeOrmUserModel>(
-			// 		TypeOrmUserModel,
-			// 		"user",
-			// 	);
-			// 	const hasCreatedUser =
-			// 		(await queryBuilder
-			// 			.select("*")
-			// 			.where({
-			// 				username: body.username,
-			// 			})
-			// 			.getCount()) > 0;
+				const response = await supertest(app.getHttpServer())
+					.post("/signup")
+					.set("X-Idempotent-Key", idempotentKeyValue)
+					.send(body)
 
-			// 	expect(response.body).toHaveProperty(
-			// 		"error",
-			// 		"Your password must contain upper and lower case characters, numbers and symbols",
-			// 	);
-			// 	expect(response.statusCode).toBe(400);
-			// 	expect(response.body).toHaveProperty("success", false);
-			// 	expect(response.body).toHaveProperty("code", 400);
-			// 	expect(hasCreatedUser).toBeFalsy();
-			// });
+				await supertest(app.getHttpServer())
+					.post("/signup")
+					.set("X-Idempotent-Key", idempotentKeyValue)
+					.send(body);
+
+				queryBuilder = dataSource.createQueryBuilder<TypeOrmUserModel>(
+					TypeOrmUserModel,
+					"user",
+				);
+				const hasCreatedOneUser =
+					(await queryBuilder
+						.select("*")
+						.where({
+							username: body.username,
+						})
+						.getCount()) === 1;
+				expect(response.statusCode).toBe(201);
+				expect(response.body).toHaveProperty("success", true);
+				expect(typeof response.body.data).toBe("object")
+				expect(response.body.data).not.toHaveProperty("password");
+				expect(response.body.data).toHaveProperty("username", body.username);
+				expect(response.body.data).toHaveProperty("id");
+				expect(response.body.data).toHaveProperty("created_at");
+				expect(response.body.data).toHaveProperty("updated_at");
+				expect(hasCreatedOneUser).toBeTruthy();
+			});
 		});
 	});
 });
