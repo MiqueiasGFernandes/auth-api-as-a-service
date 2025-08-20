@@ -1,73 +1,156 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# 🔐 AuthAPI — API de Autenticação e Autorização como Serviço
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Uma API moderna, escalável e segura para **autenticação, autorização e gerenciamento de usuários**, baseada em princípios da **Clean Architecture** e suporte completo a **OAuth2, Login Social, SSO, JWT, RBAC** e mais.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 🚀 Funcionalidades
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- [X] ✅ Registro e login de usuários
+- [ ] 🔐 Autenticação com e-mail/senha ou social login (Google, GitHub, etc)
+- [ ] 🔄 Emissão e renovação de Access Tokens (`JWT`) e Refresh Tokens
+- [ ] 🔁 SSO entre aplicações confiáveis
+- [ ] 🔄 OAuth2 completo com suporte a PKCE
+- [ ] 👥 Controle de acesso com RBAC (papéis)
+- [ ] 📄 Integração fácil com qualquer frontend ou backend
+- [ ] 🔧 Webhooks e logs de auditoria
+- [ ] 🔒 Multi-factor authentication (MFA) opcional
+- [ ] 📊 Pronto para produção e escalável via Redis
 
-## Installation
+---
 
-```bash
-$ yarn install
+## 🧱 Arquitetura
+
+Este projeto segue a estrutura da **Clean Architecture** com separação clara de responsabilidades:
+
+```
+├── domain/          # Entidades e regras de negócio puras
+├── application/     # Casos de uso e contratos
+├── infrastructure/  # Banco de dados, APIs externas, envio de e-mails
+├── presentation/    # Controllers e rotas HTTP
+├── config/          # Configurações de ambiente e inicialização
+└── ...
 ```
 
-## Running the app
+---
+
+## 📦 Endpoints principais
+
+| Método | Endpoint                  | Descrição                        |
+|--------|---------------------------|----------------------------------|
+| POST   | `/register`               | Cadastro de novo usuário         |
+| POST   | `/login`                  | Login com e-mail e senha         |
+| POST   | `/oauth/authorize`        | Início do fluxo OAuth2           |
+| POST   | `/token`                  | Geração/renovação de tokens      |
+| POST   | `/logout`                 | Revogação de tokens e sessão     |
+| GET    | `/me`                     | Dados do usuário autenticado     |
+| GET    | `/users/:id`              | Buscar usuário por ID (RBAC)     |
+
+> 🔧 **Documentação completa disponível em `/docs` (Swagger/OpenAPI)**
+
+---
+
+## 🧪 Executando localmente
+
+### 1. Clone o repositório
 
 ```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
+git clone https://github.com/seuusuario/auth-api.git
+cd auth-api
 ```
 
-## Test
+### 2. Instale as dependências
 
 ```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+npm install
+# ou
+yarn
 ```
 
-## Support
+### 3. Configure o ambiente
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Crie um arquivo `.env` com base no `.env.example`:
 
-## Stay in touch
+```env
+PORT=3000
+JWT_SECRET=uma_chave_segura
+DATABASE_URL=postgres://...
+REDIS_URL=redis://...
+```
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### 4. Rode a aplicação
 
-## License
+```bash
+npm run dev
+```
 
-Nest is [MIT licensed](LICENSE).
+A API estará disponível em `http://localhost:3000`
+
+---
+
+## 🔑 Autenticação com OAuth2
+
+- Suporte aos fluxos:
+  - Authorization Code (com PKCE)
+  - Client Credentials
+  - Implicit (depreciado)
+- Geração e introspecção de tokens JWT
+- Compatível com OpenID Connect (opcional)
+
+---
+
+## ☁️ SSO e Login Social
+
+- Login federado com Google, Facebook, GitHub, etc.
+- Suporte a Single Sign-On entre aplicações confiáveis
+- Estratégias extensíveis via providers
+
+---
+
+## 🧠 Casos de uso incluídos
+
+- Criação de usuário
+- Login e logout
+- Recuperação de senha
+- Atualização de perfil
+- Autorização baseada em papéis
+- Auditoria de login/logout
+
+---
+
+## 🧰 Tecnologias utilizadas
+
+- **Node.js** + **TypeScript**
+- **Express.js** + `Zod` (validações)
+- **PostgreSQL** + **Prisma ORM**
+- **Redis** para cache e controle de sessão
+- **JWT** para autenticação stateless
+- **Swagger (OpenAPI)** para documentação
+
+---
+
+## 🧩 Futuras melhorias
+
+- ✅ Admin Dashboard para gestão de usuários e tokens
+- ✅ Suporte a WebAuthn
+- ✅ Suporte multi-tenant
+- ✅ Exportação como biblioteca npm para fácil consumo
+
+---
+
+## 🤝 Contribuindo
+
+Pull requests são bem-vindos! Para contribuições maiores, abra uma issue para discutirmos as mudanças desejadas.
+
+---
+
+## 📄 Licença
+
+Distribuído sob a licença MIT. Veja `LICENSE` para mais informações.
+
+---
+
+## ✨ Créditos
+
+Criado com 💙 por [Miquéias Fernandes](https://github.com/MiqueiasGFernandes).  
+Inspirado por Auth0, Clerk e Firebase Auth.
