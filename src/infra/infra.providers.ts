@@ -1,16 +1,10 @@
 import { SETTINGS_FETCH_GATEWAY, VAULT_FETCHER_GATEWAY } from "@application/gateways";
-import {
-    PASSWORD_ENCRYPTATOR_PORT,
-    SESSION_TOKEN_PORT,
-} from "@application/ports";
-import { USER_REPOSITORY } from "@application/repositories/user.repository";
+import { PASSWORD_ENCRYPTATOR_PORT, SESSION_TOKEN_PORT } from "@application/ports";
+import { USER_REPOSITORY } from "@application/repositories";
 import type { Provider } from "@nestjs/common";
-import {
-    BCryptPasswordEncryptationAdapter,
-    JwtTokenServiceAdapter
-} from "./adapters";
+import { BCryptPasswordEncryptationAdapter, JwtTokenServiceAdapter } from "./adapters";
 import { DotenvVaultSecretFetchergateway, LocalSettingsFetcherGateway } from "./gateways";
-import { TypeOrmuUserRepository } from "./repositories/typeorm-user.repository";
+import { TypeOrmuUserRepository } from "./repositories";
 
 export const InfraProviders: Provider[] = [
     {
@@ -31,6 +25,6 @@ export const InfraProviders: Provider[] = [
     },
     {
         provide: VAULT_FETCHER_GATEWAY,
-        useClass: DotenvVaultSecretFetchergateway
-    }
+        useClass: DotenvVaultSecretFetchergateway,
+    },
 ];

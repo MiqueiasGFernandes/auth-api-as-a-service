@@ -5,9 +5,8 @@ import {
     type NestModule,
     RequestMethod,
 } from "@nestjs/common";
-import { SignInController } from "./controllers";
-import { RegisterController } from "./controllers/register.controller";
-import { IdempotentMiddleware } from "./middlewares/idempotent.middleware";
+import { RegisterController, SignInController } from "./controllers";
+import { IdempotentMiddleware } from "./middlewares";
 
 @Module({
     imports: [AppModule],

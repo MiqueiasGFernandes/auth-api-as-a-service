@@ -1,1 +1,1 @@
-export { TypeOrmUserModel } from './typeorm-user.model'
+export * from './typeorm-user.model'

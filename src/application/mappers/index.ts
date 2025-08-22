@@ -1,1 +1,1 @@
-export { UserMapper } from './user.mapper'
+export * from './user.mapper'
