@@ -73,7 +73,7 @@ Crie um arquivo `.env` com base no `.env.example`:
 
 ```env
 PORT=3000
-JWT_SECRET=uma_chave_segura
+APP_SECRET=uma_chave_segura
 DATABASE_URL=postgres://...
 REDIS_URL=redis://...
 ```
