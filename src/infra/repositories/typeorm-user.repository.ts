@@ -11,6 +11,25 @@ export class TypeOrmuUserRepository implements IUserRepository {
         @Inject(getDataSourceToken()) private readonly dataSource: DataSource,
     ) { }
 
+    async findOneBy(where: Partial<UserInputDto>): Promise<UserOutputDto | null> {
+        const user = await this.dataSource
+            .createQueryBuilder(TypeOrmUserModel, "users")
+            .where(where)
+            .getOne();
+
+        if (!user) {
+            return null
+        }
+
+        return {
+            id: user.id,
+            username: user.username,
+            password: user.password,
+            updated_at: user.updatedAt,
+            created_at: user.createdAt,
+        }
+    }
+
     async countBy(where: Partial<UserInputDto>): Promise<number> {
         const count = await this.dataSource
             .createQueryBuilder(TypeOrmUserModel, "users")

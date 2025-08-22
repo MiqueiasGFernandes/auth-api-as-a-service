@@ -70,6 +70,8 @@ export class RemoteAddUserUseCase implements IAddUserUseCase {
 
         const output = await this.userRepository.create(input);
 
+        output.password = undefined;
+
         return {
             code: HttpStatus.OK,
             success: true,

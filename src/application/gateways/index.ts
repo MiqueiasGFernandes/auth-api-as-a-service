@@ -1,1 +1,2 @@
-export { ISettingsFetcherGateway, SETTINGS_FETCH_GATEWAY } from './settings.fetcher.gateway'
+export * from './settings.fetcher.gateway'
+export * from './vault-fetcher.gateway'

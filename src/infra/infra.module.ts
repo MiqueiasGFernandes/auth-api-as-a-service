@@ -1,7 +1,8 @@
-import "dotenv/config"
+import "dotenv/config";
 
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
+import { JwtModule } from "@nestjs/jwt";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { InfraProviders } from "./infra.providers";
 import { TypeOrmUserModel } from "./models";
@@ -10,7 +11,10 @@ import { TypeOrmUserModel } from "./models";
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
-            envFilePath: `.env.${process.env.NODE_ENV}`
+            envFilePath: `.env.${process.env.NODE_ENV}`,
+        }),
+        JwtModule.register({
+            global: true,
         }),
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
@@ -27,6 +31,6 @@ import { TypeOrmUserModel } from "./models";
         }),
     ],
     providers: [...InfraProviders],
-    exports: [...InfraProviders]
+    exports: [...InfraProviders],
 })
 export class InfraModule { }
