@@ -4,7 +4,7 @@ import { config } from "dotenv";
 function loadEnvs() {
     const { error } = config({
         path: path.resolve(process.cwd(), ".env.test"),
-        debug: true,
+        debug: false,
     });
 
     if (error) {
