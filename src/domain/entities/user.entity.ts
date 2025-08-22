@@ -1,10 +1,18 @@
 export type FieldType = "username" | "email" | "phone"
 
 export class UserEntity {
+    public id: string
+    public createdAt: Date
+    public updatedAt: Date
+    public username: string
+    public plainPassword: string
+    public encryptedPassword: string
+
     constructor(
-        private username: string,
-        private readonly password: string
-    ) { }
+        attributes: Partial<UserEntity>
+    ) {
+        Object.assign(this, attributes)
+    }
 
     private isValidPlainUsername(): boolean {
         const hasNotUpperCase = /A-Z/.test(this.username);
@@ -37,6 +45,10 @@ export class UserEntity {
     }
 
     isValidUsernameByFieldType(fieldType: FieldType): boolean {
+        if (!this.username) {
+            throw new Error('Field username is not defined by domain')
+        }
+
         const validatorsByContext: Record<FieldType, () => boolean> = {
             email: this.isValidEmail.bind(this),
             phone: this.isValidPhoneNumber.bind(this),
@@ -47,10 +59,14 @@ export class UserEntity {
     }
 
     isStrongPassword(): boolean {
-        const hasUppercase = /[A-Z]/.test(this.password);
-        const hasNumbers = /[0-9]/.test(this.password);
-        const hasLowercase = /[a-z]/.test(this.password);
-        const hasSymbols = /[^A-Za-z0-9\s]/.test(this.password);
+        if (!this.plainPassword) {
+            throw new Error('Field password is not defined by domain')
+        }
+
+        const hasUppercase = /[A-Z]/.test(this.plainPassword);
+        const hasNumbers = /[0-9]/.test(this.plainPassword);
+        const hasLowercase = /[a-z]/.test(this.plainPassword);
+        const hasSymbols = /[^A-Za-z0-9\s]/.test(this.plainPassword);
 
         return hasLowercase && hasUppercase && hasNumbers && hasSymbols;
     }

@@ -1,7 +1,11 @@
-import type { SessionTokenOutputDto, UserOutputDto } from "@application/dto";
+import type { SessionTokenOutputDto } from "@application/dto";
+import type { UserEntity } from "@domain/entities";
 
 export type ISessionTokenPort = {
-    sign(user: UserOutputDto, expirationTime: string): Promise<SessionTokenOutputDto>
+    sign(
+        user: UserEntity,
+        expirationTime: string,
+    ): Promise<SessionTokenOutputDto>;
 };
 
 export const SESSION_TOKEN_PORT = Symbol.for("SESSION_TOKEN_PORT");

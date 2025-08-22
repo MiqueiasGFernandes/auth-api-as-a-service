@@ -42,7 +42,7 @@ export class RemoteAddUserUseCase implements IAddUserUseCase {
             };
         }
 
-        const userEntity = UserMapper.toDomain(input);
+        let userEntity = UserMapper.fromInputDtoToDomain(input);
 
         const isValidUsername =
             userEntity.isValidUsernameByFieldType(usernameFieldType);
@@ -66,16 +66,14 @@ export class RemoteAddUserUseCase implements IAddUserUseCase {
             };
         }
 
-        input.password = await this.passwordEncryptator.encrypt(input.password)
+        userEntity.encryptedPassword = await this.passwordEncryptator.encrypt(input.password)
 
-        const output = await this.userRepository.create(input);
-
-        output.password = undefined;
+        userEntity = await this.userRepository.create(userEntity);
 
         return {
             code: HttpStatus.OK,
             success: true,
-            data: output,
+            data: UserMapper.fromDomainToOutputDto(userEntity),
         };
     }
 }

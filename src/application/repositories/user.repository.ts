@@ -1,9 +1,9 @@
-import type { UserInputDto, UserOutputDto } from "@application/dto";
+import type { UserEntity } from "@domain/entities";
 
 export interface IUserRepository {
-    countBy(where: Partial<UserInputDto>): Promise<number>
-    findOneBy(where: Partial<UserInputDto>): Promise<UserOutputDto | null>
-    create(data: UserInputDto): Promise<UserOutputDto>
+    countBy(where: Partial<UserEntity>): Promise<number>;
+    findOneBy(where: Partial<UserEntity>): Promise<UserEntity | null>;
+    create(data: UserEntity): Promise<UserEntity>;
 }
 
-export const USER_REPOSITORY = 'IUserRepository'
+export const USER_REPOSITORY = "IUserRepository";

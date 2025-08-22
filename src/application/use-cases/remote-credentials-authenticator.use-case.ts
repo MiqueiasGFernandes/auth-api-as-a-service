@@ -49,7 +49,7 @@ export class RemoteCredentialsAuthenticatorUseCase
 
         const isSamePassword = await this.passwordEncryptationPort.compare(
             password,
-            user.password,
+            user.encryptedPassword,
         );
 
         if (!isSamePassword) {

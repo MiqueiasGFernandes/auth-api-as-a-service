@@ -1,5 +1,6 @@
-import type { UserInputDto, UserOutputDto } from "@application/dto";
+import { UserMapper } from "@application/mappers";
 import type { IUserRepository } from "@application/repositories";
+import type { UserEntity } from "@domain/entities";
 import { TypeOrmUserModel } from "@infra/models";
 import { Inject, Injectable } from "@nestjs/common";
 import { getDataSourceToken } from "@nestjs/typeorm";
@@ -11,26 +12,20 @@ export class TypeOrmuUserRepository implements IUserRepository {
         @Inject(getDataSourceToken()) private readonly dataSource: DataSource,
     ) { }
 
-    async findOneBy(where: Partial<UserInputDto>): Promise<UserOutputDto | null> {
+    async findOneBy(where: Partial<UserEntity>): Promise<UserEntity | null> {
         const user = await this.dataSource
             .createQueryBuilder(TypeOrmUserModel, "users")
             .where(where)
             .getOne();
 
         if (!user) {
-            return null
+            return null;
         }
 
-        return {
-            id: user.id,
-            username: user.username,
-            password: user.password,
-            updated_at: user.updatedAt,
-            created_at: user.createdAt,
-        }
+        return UserMapper.fromModelToDomain(user);
     }
 
-    async countBy(where: Partial<UserInputDto>): Promise<number> {
+    async countBy(where: Partial<UserEntity>): Promise<number> {
         const count = await this.dataSource
             .createQueryBuilder(TypeOrmUserModel, "users")
             .where(where)
@@ -39,22 +34,25 @@ export class TypeOrmuUserRepository implements IUserRepository {
         return count;
     }
 
-    async create(data: UserInputDto): Promise<UserOutputDto> {
+    async create(userEntity: UserEntity): Promise<UserEntity> {
+        const data = UserMapper.fromDomainToModel(userEntity)
+
         const result = await this.dataSource
             .createQueryBuilder(TypeOrmUserModel, "users")
             .insert()
             .into(TypeOrmUserModel)
             .values(data)
-            .returning("*")
+            .returning(`
+                "id",
+                "username",
+                "password",
+                "created_at" as "createdAt",
+                "updated_at" as "updatedAt"
+            `)
             .execute();
 
-        const user = result.raw[0]
+        const user: TypeOrmUserModel = result.raw[0];
 
-        return {
-            id: user.id,
-            username: user.username,
-            created_at: user.created_at,
-            updated_at: user.updated_at,
-        }
+        return UserMapper.fromModelToDomain(user)
     }
 }
