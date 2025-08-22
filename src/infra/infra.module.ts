@@ -1,12 +1,13 @@
 import "dotenv/config";
 
-import { Module } from "@nestjs/common";
+import { Global, Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { InfraProviders } from "./infra.providers";
 import { TypeOrmUserModel } from "./models";
 
+@Global()
 @Module({
     imports: [
         ConfigModule.forRoot({

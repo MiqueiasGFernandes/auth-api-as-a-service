@@ -1,9 +1,10 @@
-import { Module } from "@nestjs/common";
-import { PresentationModule } from "@presentation/presentation.module";
+import { AppModule } from "@application/application.module";
+import { Global, Module } from "@nestjs/common";
 
+@Global()
 @Module({
     imports: [
-        PresentationModule,
+        AppModule,
     ]
 })
 export class BootstrapModule { }
