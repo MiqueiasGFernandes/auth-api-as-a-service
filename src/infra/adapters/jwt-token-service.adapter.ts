@@ -1,10 +1,9 @@
-import type { SessionTokenOutputDto } from "@application/dto";
 import {
     type IVaultFetcherGateway,
     VAULT_FETCHER_GATEWAY,
 } from "@application/gateways";
 import type { ISessionTokenPort } from "@application/ports";
-import type { UserEntity } from "@domain/entities";
+import type { SessionTokenEntity, UserEntity } from "@domain/entities";
 import { Inject, Injectable } from "@nestjs/common";
 // biome-ignore lint/style/useImportType: <adapter>
 import { JwtService } from "@nestjs/jwt";
@@ -19,7 +18,7 @@ export class JwtTokenServiceAdapter implements ISessionTokenPort {
     async sign(
         user: UserEntity,
         expirationTime: string,
-    ): Promise<SessionTokenOutputDto> {
+    ): Promise<SessionTokenEntity> {
         const secret =
             await this.vaultFetcherGateway.getSecret<string>("APP_SECRET");
 
@@ -34,7 +33,7 @@ export class JwtTokenServiceAdapter implements ISessionTokenPort {
         );
 
         return {
-            access_token: accessToken,
+            accessToken: accessToken,
         };
     }
 }

@@ -3,6 +3,7 @@ import {
     type ISettingsFetcherGateway,
     SETTINGS_FETCH_GATEWAY,
 } from "@application/gateways";
+import { SessionTokenMapper } from "@application/mappers";
 import {
     type IPasswordEncryptorPort,
     type ISessionTokenPort,
@@ -65,7 +66,7 @@ export class RemoteCredentialsAuthenticatorUseCase
         return {
             code: HttpStatus.CREATED,
             success: true,
-            data: sessionToken,
+            data: SessionTokenMapper.fromDomainToOutputDto(sessionToken),
         };
     }
 }
